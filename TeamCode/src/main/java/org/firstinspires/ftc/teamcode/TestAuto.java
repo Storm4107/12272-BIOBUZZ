@@ -53,9 +53,11 @@ public class TestAuto extends LinearOpMode {
         setLeftPower(0);
     }
 
-    private boolean seesTags(int minId, int maxId) {
+    /*private boolean seesTags(int minId, int maxId) {
+        long startTime = System.currentTimeMillis();
+        long timeout = 600;
         LLResult result = limelight.getLatestResult();
-        if (result != null || result.isValid()) {
+        if (result != null && result.isValid()) {
             telemetry.addData("Limelight", "No Valid Result");
             telemetry.update();
             return false;
@@ -69,11 +71,15 @@ public class TestAuto extends LinearOpMode {
                     telemetry.update();
                     return true;
                 }
+                telemetry.update();
+                sleep(50);
             }
         telemetry.addData("No tags in range", minId +"-" + maxId);
         telemetry.update();
         return false;
     }
+
+     */
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -89,6 +95,7 @@ public class TestAuto extends LinearOpMode {
 
         limelight.pipelineSwitch(0);
         limelight.start();
+        sleep(300);
 
         telemetry.addData("LeftSideTag", LeftSideTag);
         telemetry.addData("RightSideTag", RightSideTag);
@@ -97,7 +104,7 @@ public class TestAuto extends LinearOpMode {
 
         waitForStart();
 
-        boolean firstSetSeen = seesTags(38, 41);
+        /*boolean firstSetSeen = seesTags(38, 41);
         telemetry.addData("First set Seen", firstSetSeen);
         telemetry.update();
 
@@ -123,5 +130,46 @@ public class TestAuto extends LinearOpMode {
             telemetry.update();
             sleep(100);
         }
+        */
+        boolean firstSearchComplete = false;
+
+        while (opModeIsActive()) {
+            boolean leftSeen = false;
+            boolean rightSeen = false;
+
+            LLResult result = limelight.getLatestResult();
+
+            result.getFiducialResults();
+
+            for (LLResultTypes.FiducialResult fiducial : result.getFiducialResults()) {
+                telemetry.addData("AprilTag Id:", fiducial.getFiducialId());
+
+                int id = fiducial.getFiducialId();
+
+
+                if (id == 38 || id == 39 || id == 40 || id == 41) {
+                    leftSeen = true;
+                }
+                if (id == 42 || id == 43 || id == 44 || id == 45) {
+                    rightSeen = true;
+                }
+            }
+            if (!firstSearchComplete && !leftSeen) {
+                driveForward(.5,3700);
+                turn180(.4,1800);
+
+                firstSearchComplete = true;
+            }
+
+            if (firstSearchComplete && rightSeen) {
+                turn90(.4,900);
+                stopDrive();
+                break;
+            }
+        }
+
     }
+
+
 }
+
